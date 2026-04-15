@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>社团价值观倾向测试</title>
+    <title>动漫社意识形态测试</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <style>
         :root {
@@ -50,12 +50,13 @@
 <body>
 
 <div class="container">
-    <div id="loading">正在同步数据库 (CSV)...</div>
+    <div id="loading">少女祈祷中...</div>
 
     <div id="home-section">
-        <h1 style="font-size: 32px; margin-bottom: 10px;">社团价值观测试</h1>
-        <p style="color: #666; margin-bottom: 40px;">基于 4 维度坐标轴，探索你的社团治理人格</p>
-        <button class="btn btn-agree-max" style="width:240px; margin: 0 auto;" onclick="startQuiz()">开始测试</button>
+        <h1 style="font-size: 32px; margin-bottom: 10px;">动漫社意识形态测试</h1>
+        <p style="color: #666; margin-bottom: 40px;">用50道选择题，探索你的动漫社人格。</p>
+        <p style="color: #ff0000; margin-bottom: 40px;">本测试充满了刻板印象和奇谈怪论以及可能的攻击性，结果不具任何可靠性。<br>该测试经过了原作者不知晓的他人修改。</p>
+        <button class="btn btn-agree-max" style="width:240px; margin: 0 auto;" onclick="startQuiz()">你已接受这是纯娱乐测试</button>
     </div>
 
     <div id="quiz-section">
@@ -63,13 +64,13 @@
         <h2 id="question-text" style="min-height: 100px; margin: 40px 0; line-height: 1.4;">数据读取中...</h2>
         <button class="btn btn-agree-max" onclick="nextQuestion(1.0)">非常同意</button>
         <button class="btn btn-agree" onclick="nextQuestion(0.5)">同意</button>
-        <button class="btn btn-neutral" onclick="nextQuestion(0)">中立</button>
+        <button class="btn btn-neutral" onclick="nextQuestion(0)">中立/不确定</button>
         <button class="btn btn-disagree" onclick="nextQuestion(-0.5)">反对</button>
         <button class="btn btn-disagree-max" onclick="nextQuestion(-1.0)">非常反对</button>
     </div>
 
     <div id="result-section">
-        <h1 style="margin-bottom: 30px;">测试分析报告</h1>
+        <h1 style="margin-bottom: 30px;">分析</h1>
         <div id="axis-results"></div>
         <button class="btn btn-neutral" style="width:200px; margin: 40px auto;" onclick="location.reload()">重新测试</button>
     </div>
