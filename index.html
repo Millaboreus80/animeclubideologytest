@@ -2,23 +2,148 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>我的问卷网页</title>
+    <title>8values 风格测试</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <style>
-        /* 这里可以添加简单的样式 */
-        body {
-            font-family: sans-serif;
-            max-width: 600px;
-            margin: 50px auto;
-            padding: 20px;
-            line-height: 1.6;
-        }
+        body { font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif; background: #fdfdfd; color: #333; margin: 0; padding: 20px; }
+        .container { max-width: 700px; margin: 40px auto; background: white; padding: 40px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); text-align: center; }
+        
+        /* 按钮样式 */
+        .btn { display: block; width: 100%; margin: 12px 0; padding: 18px; font-size: 18px; border: none; border-radius: 8px; cursor: pointer; transition: 0.2s; font-weight: bold; }
+        .btn-agree-max { background: #2e7d32; color: white; }
+        .btn-agree { background: #66bb6a; color: white; }
+        .btn-neutral { background: #bdbdbd; color: white; }
+        .btn-disagree { background: #ef5350; color: white; }
+        .btn-disagree-max { background: #c62828; color: white; }
+        
+        /* 结果页进度条样式 */
+        .axis-label { display: flex; justify-content: space-between; margin-bottom: 5px; font-weight: bold; }
+        .bar-container { width: 100%; height: 35px; background: #eee; border-radius: 17px; overflow: hidden; display: flex; margin-bottom: 25px; }
+        .bar-left { height: 100%; transition: width 1s; display: flex; align-items: center; padding-left: 15px; color: white; font-size: 14px; }
+        .bar-right { height: 100%; transition: width 1s; display: flex; align-items: center; justify-content: flex-end; padding-right: 15px; color: white; font-size: 14px; }
+
+        #quiz-section, #result-section, #home-section { display: none; }
     </style>
 </head>
 <body>
 
-    <h1>欢迎来到我的调查问卷</h1>
-    <p>这是一个运行在 GitHub Pages 上的基础页面。</p>
+<div class="container">
+    <div id="loading">资源加载中...</div>
 
-    </body>
+    <div id="home-section">
+        <h1>价值观倾向测试</h1>
+        <p>基于 8 种不同维度的深度测评</p>
+        <button class="btn btn-agree-max" style="width:200px; margin: 40px auto;" onclick="startQuiz()">开始测试</button>
+    </div>
+
+    <div id="quiz-section">
+        <p id="progress-text" style="color: #888;"></p>
+        <h2 id="question-text" style="min-height: 80px; margin-bottom: 40px;">加载中...</h2>
+        <button class="btn btn-agree-max" onclick="nextQuestion(1.0)">非常同意</button>
+        <button class="btn btn-agree" onclick="nextQuestion(0.5)">同意</button>
+        <button class="btn btn-neutral" onclick="nextQuestion(0)">中立 / 不确定</button>
+        <button class="btn btn-disagree" onclick="nextQuestion(-0.5)">反对</button>
+        <button class="btn btn-disagree-max" onclick="nextQuestion(-1.0)">非常反对</button>
+    </div>
+
+    <div id="result-section">
+        <h1>测试结果</h1>
+        <div id="axis-results"></div>
+        <button class="btn btn-neutral" style="width:200px; margin: 20px auto;" onclick="location.reload()">重新测试</button>
+    </div>
+</div>
+
+<script>
+    let questions = [];
+    let currentIndex = 0;
+    
+    // 初始化 8 个方向的得分
+    let scores = [0, 0, 0, 0, 0, 0, 0, 0];
+
+    // 维度名称定义（根据你的表格方向 1-8 对应）
+    const axisNames = [
+        { left: "方向1名称", right: "方向2名称", colorL: "#1b5e20", colorR: "#b71c1c" },
+        { left: "方向3名称", right: "方向4名称", colorL: "#0d47a1", colorR: "#e65100" },
+        { left: "方向5名称", right: "方向6名称", colorL: "#4a148c", colorR: "#fbc02d" },
+        { left: "方向7名称", right: "方向8名称", colorL: "#006064", colorR: "#ad1457" }
+    ];
+
+    window.onload = function() {
+        Papa.parse("data.csv", {
+            download: true,
+            header: false, // 设为 false 因为我们手动处理第一行
+            skipEmptyLines: true,
+            complete: function(results) {
+                // 排除第一行表头
+                questions = results.data.slice(1);
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('home-section').style.display = 'block';
+            }
+        });
+    };
+
+    function startQuiz() {
+        document.getElementById('home-section').style.display = 'none';
+        document.getElementById('quiz-section').style.display = 'block';
+        showQuestion();
+    }
+
+    function showQuestion() {
+        if (currentIndex < questions.length) {
+            document.getElementById('progress-text').innerText = `问题 ${currentIndex + 1} / ${questions.length}`;
+            document.getElementById('question-text').innerText = questions[currentIndex][0];
+        } else {
+            showResult();
+        }
+    }
+
+    function nextQuestion(multiplier) {
+        // 获取当前行的 8 个数字权重 (从索引 1 到 8)
+        const row = questions[currentIndex];
+        for (let i = 0; i < 8; i++) {
+            let weight = parseFloat(row[i + 1]) || 0;
+            // 如果用户选“反对”，multiplier 为负，计算结果会自动抵消或反向增加
+            // 在 8values 逻辑中，通常“同意”增加正向权重，“反对”增加负向权重
+            scores[i] += weight * multiplier;
+        }
+        currentIndex++;
+        showQuestion();
+    }
+
+    function showResult() {
+        document.getElementById('quiz-section').style.display = 'none';
+        document.getElementById('result-section').style.display = 'block';
+        
+        const resDiv = document.getElementById('axis-results');
+        resDiv.innerHTML = "";
+
+        // 每两个方向组成一个维度条
+        for (let i = 0; i < 4; i++) {
+            let s1 = scores[i*2];     // 方向 1, 3, 5, 7
+            let s2 = scores[i*2 + 1]; // 方向 2, 4, 6, 8
+            
+            // 计算百分比
+            let total = Math.abs(s1) + Math.abs(s2);
+            let pctL = 50;
+            if (total !== 0) {
+                pctL = ((s1 / total) * 100).toFixed(1);
+            }
+            let pctR = (100 - pctL).toFixed(1);
+
+            const axis = axisNames[i];
+            resDiv.innerHTML += `
+                <div class="axis-label">
+                    <span>${axis.left}</span>
+                    <span>${axis.right}</span>
+                </div>
+                <div class="bar-container">
+                    <div class="bar-left" style="width: ${pctL}%; background: ${axis.colorL}">${pctL}%</div>
+                    <div class="bar-right" style="width: ${pctR}%; background: ${axis.colorR}">${pctR}%</div>
+                </div>
+            `;
+        }
+    }
+</script>
+
+</body>
 </html>
